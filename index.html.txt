@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Inspection</title>
+<link rel="manifest" href="manifest.json">
+
+<style>
+body { font-family: Arial; padding: 15px; background:#f5f6fa; }
+.card { background:#fff; padding:15px; margin-bottom:10px; border-radius:10px; }
+input, select, textarea { width:100%; margin-top:5px; padding:8px; }
+button { padding:10px; margin-top:10px; width:100%; background:#2c3e50; color:#fff; border:none; }
+</style>
+
+</head>
+<body>
+
+<h2>تفتيش عقار</h2>
+
+<div class="card">
+<input id="client" placeholder="اسم العميل">
+<input id="location" placeholder="الموقع">
+<select id="type">
+<option>شقة</option>
+<option>فيلا</option>
+<option>مكتب</option>
+</select>
+</div>
+
+<div class="card">
+<h4>التقييم</h4>
+
+<label>الجدران</label>
+<select id="walls"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+
+<label>الكهرباء</label>
+<select id="electric"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+
+<label>السباكة</label>
+<select id="plumbing"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+
+</div>
+
+<div class="card">
+<textarea id="notes" placeholder="ملاحظات"></textarea>
+</div>
+
+<button onclick="saveInspection()">حفظ التقرير</button>
+<button onclick="generatePDF()">تحميل PDF</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+let inspections = JSON.parse(localStorage.getItem("inspections")) || [];
+
+function calculateScore(data){
+  let total = (+data.walls + +data.electric + +data.plumbing);
+  return Math.round((total/15)*100);
+}
+
+function saveInspection(){
+  const data = {
+    client: client.value,
+    location: location.value,
+    type: type.value,
+    walls: walls.value,
+    electric: electric.value,
+    plumbing: plumbing.value,
+    notes: notes.value,
+    score: 0,
+    date: new Date().toLocaleString()
+  };
+
+  data.score = calculateScore(data);
+  inspections.push(data);
+  localStorage.setItem("inspections", JSON.stringify(inspections));
+
+  alert("تم حفظ التقرير ✅");
+}
+
+async function generatePDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let last = inspections[inspections.length -1];
+
+  doc.text("Property Inspection Report", 10, 10);
+  doc.text("Client: " + last.client, 10, 20);
+  doc.text("Location: " + last.location, 10, 30);
+  doc.text("Score: " + last.score + "%", 10, 40);
+  doc.text("Notes: " + last.notes, 10, 50);
+
+  doc.save("report.pdf");
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+
+</body>
+</html>
